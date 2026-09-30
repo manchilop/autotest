@@ -127,6 +127,15 @@ export default function PracticeScreen() {
       ) : (
         <>
           <View style={styles.card}>
+            {question.status === "PENDING" && (
+              <View style={styles.pendingBanner}>
+                <Text style={styles.pendingIcon}>!</Text>
+                <Text style={styles.pendingText}>
+                  Not reviewed yet: your teacher has not validated this question
+                </Text>
+              </View>
+            )}
+
             <View style={styles.questionSection}>
               <Text style={styles.questionText}>{question.questionText}</Text>
             </View>
@@ -184,6 +193,9 @@ const styles = StyleSheet.create({
   pageTitle: { fontSize: 22, fontWeight: "700", color: "#111827" },
   pageSubtitle: { fontSize: 13, color: "#6B7280", marginTop: 2 },
   card: { backgroundColor: "#fff", borderWidth: 1, borderColor: "#E5E7EB", borderRadius: 12, overflow: "hidden" },
+  pendingBanner: { flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 20, paddingVertical: 10, backgroundColor: "#FEF6E7", borderBottomWidth: 1, borderBottomColor: "#F3D9A4" },
+  pendingIcon: { width: 18, height: 18, borderRadius: 9, backgroundColor: "#B77A08", color: "#fff", fontSize: 12, fontWeight: "700", textAlign: "center", lineHeight: 18, overflow: "hidden" },
+  pendingText: { flex: 1, fontSize: 12, fontWeight: "600", color: "#8A5B05" },
   questionSection: { padding: 20, borderBottomWidth: 1, borderBottomColor: "#E5E7EB" },
   questionText: { fontSize: 17, fontWeight: "600", color: "#111827", lineHeight: 25 },
   choicesSection: { padding: 12, gap: 8 },
