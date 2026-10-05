@@ -74,8 +74,10 @@ public class DataSeeder implements CommandLineRunner {
         Question q8 = question("What is the atomic number of Hydrogen?", chemistry, QuestionStatus.PENDING,
                 choice("0", false), choice("1", true), choice("2", false), choice("8", false));
 
+        // The teacher is auto-enrolled in their own subjects, so they satisfy the
+        // membership check that guards question creation.
         for (Question q : new Question[]{q1, q2, q3, q4, q5, q6, q7, q8}) {
-            questionService.createQuestion(q);
+            questionService.createQuestion(q, teacher);
         }
 
         userQuestionService.markAsCompleted(student1, q1);

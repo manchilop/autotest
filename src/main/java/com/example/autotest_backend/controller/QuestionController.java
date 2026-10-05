@@ -31,8 +31,10 @@ public class QuestionController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public QuestionResponse createQuestion(
-            @RequestBody @Valid CreateQuestionRequest request
+            @RequestBody @Valid CreateQuestionRequest request,
+            Authentication authentication
     ) {
+        User requester = getUser(authentication);
         Question question = questionMapper.toEntity(request);
 
         // Resolve topic if provided
@@ -46,15 +48,19 @@ public class QuestionController {
                 question.addChoice(questionMapper.toEntity(choiceRequest))
         );
 
-        Question saved = questionService.createQuestion(question);
+        Question saved = questionService.createQuestion(question, requester);
         return questionMapper.toResponse(saved);
     }
 
     @GetMapping
-    public List<QuestionResponse> getQuestions(@RequestParam(required = false) QuestionStatus status) {
+    public List<QuestionResponse> getQuestions(
+            @RequestParam(required = false) QuestionStatus status,
+            Authentication authentication
+    ) {
+        User requester = getUser(authentication);
         List<Question> questions = status != null
-                ? questionService.getQuestionsByStatus(status)
-                : questionService.getAllQuestions();
+                ? questionService.getQuestionsByStatus(status, requester)
+                : questionService.getAllQuestions(requester);
 
         return questions.stream()
                 .map(questionMapper::toResponse)
@@ -82,13 +88,13 @@ public class QuestionController {
     }
 
     @PatchMapping("/{id}/approve")
-    public QuestionResponse approveQuestion(@PathVariable Long id) {
-        return questionMapper.toResponse(questionService.approveQuestion(id));
+    public QuestionResponse approveQuestion(@PathVariable Long id, Authentication authentication) {
+        return questionMapper.toResponse(questionService.approveQuestion(id, getUser(authentication)));
     }
 
     @PatchMapping("/{id}/reject")
-    public QuestionResponse rejectQuestion(@PathVariable Long id) {
-        return questionMapper.toResponse(questionService.rejectQuestion(id));
+    public QuestionResponse rejectQuestion(@PathVariable Long id, Authentication authentication) {
+        return questionMapper.toResponse(questionService.rejectQuestion(id, getUser(authentication)));
     }
 
     // ──────────────────────────────────────────────

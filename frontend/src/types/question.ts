@@ -31,10 +31,13 @@ export interface QuestionResponse {
   subjectName: string | null;
 }
 
+export type QuestionStatus = "PENDING" | "APPROVED" | "REJECTED";
+
 export interface PracticeQuestionResponse {
   id: number;
   questionText: string;
   choices: PracticeChoiceResponse[];
+  status: QuestionStatus;
 }
 
 export interface PracticeChoiceResponse {
