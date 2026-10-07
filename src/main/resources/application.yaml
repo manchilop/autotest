@@ -21,3 +21,7 @@ logging:
 jwt:
   secret: ${JWT_SECRET:changeitchangeitchangeitchangeit}
   expiration-s: ${JWT_EXPIRATION_S:3600}
+
+app:
+  seed:
+    enabled: ${SEED_DB:true}

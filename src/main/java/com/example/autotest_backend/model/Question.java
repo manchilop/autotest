@@ -29,6 +29,10 @@ public class Question {
     @Builder.Default
     private QuestionStatus status = QuestionStatus.PENDING;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "topic_id", nullable = true)
+    private Topic topic;
+
     @OneToMany(mappedBy = "question", cascade = CascadeType.ALL, orphanRemoval = true)
     @Setter(AccessLevel.NONE)
     @Builder.Default

@@ -33,40 +33,41 @@ public class SecurityConfig {
         http.csrf(AbstractHttpConfigurer::disable)
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .exceptionHandling(ex -> ex.authenticationEntryPoint((request, response, authException) -> {
-                response.setStatus(401);
-                response.setContentType("application/json");
-                response.getWriter().write("{\"status\": 401, \"message\": \"Unauthorized\"}");
-            }).accessDeniedHandler((request, response, accessDeniedException) -> {
-                response.setStatus(403);
-                response.setContentType("application/json");
-                response.getWriter().write("{\"status\": 403, \"message\": \"Access denied\"}");
-            }))
-            .authorizeHttpRequests(auth -> auth.requestMatchers("/auth/**")
-                                               .permitAll()
+            .exceptionHandling(ex -> ex
+                .authenticationEntryPoint((request, response, authException) -> {
+                    response.setStatus(401);
+                    response.setContentType("application/json");
+                    response.getWriter().write("{\"status\": 401, \"message\": \"Unauthorized\"}");
+                })
+                .accessDeniedHandler((request, response, accessDeniedException) -> {
+                    response.setStatus(403);
+                    response.setContentType("application/json");
+                    response.getWriter().write("{\"status\": 403, \"message\": \"Access denied\"}");
+                }))
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/auth/**").permitAll()
 
-                                               // STUDENT
-                                               .requestMatchers(HttpMethod.GET, "/api/questions/next")
-                                               .hasRole("STUDENT")
-                                               .requestMatchers(HttpMethod.POST, "/api/questions/*/answer")
-                                               .hasRole("STUDENT")
-                                               .requestMatchers(HttpMethod.POST, "/api/questions")
-                                               .hasRole("STUDENT")
-                                               .requestMatchers(HttpMethod.GET, "/api/user-questions/completed")
-                                                .hasRole("STUDENT")
+                // ── STUDENT ────────────────────────────────────────────────
+                .requestMatchers(HttpMethod.GET,  "/api/questions/next").hasRole("STUDENT")
+                .requestMatchers(HttpMethod.POST, "/api/questions/*/answer").hasRole("STUDENT")
+                .requestMatchers(HttpMethod.POST, "/api/questions").hasRole("STUDENT")
+                .requestMatchers(HttpMethod.GET,  "/api/user-questions/completed").hasRole("STUDENT")
+                .requestMatchers(HttpMethod.POST, "/api/subjects/join").hasRole("STUDENT")
 
-                                               // TEACHER
-                                               .requestMatchers(HttpMethod.GET, "/api/questions")
-                                               .hasRole("TEACHER")
-                                               .requestMatchers(HttpMethod.GET, "/api/questions/{id}")
-                                               .hasRole("TEACHER")
-                                               .requestMatchers(HttpMethod.POST, "/api/questions/*/approve")
-                                               .hasRole("TEACHER")
-                                               .requestMatchers(HttpMethod.POST, "/api/questions/*/reject")
-                                               .hasRole("TEACHER")
+                // ── TEACHER ────────────────────────────────────────────────
+                .requestMatchers(HttpMethod.GET,  "/api/questions").hasRole("TEACHER")
+                .requestMatchers(HttpMethod.GET,  "/api/questions/{id}").hasRole("TEACHER")
+                .requestMatchers(HttpMethod.PATCH, "/api/questions/*/approve").hasRole("TEACHER")
+                .requestMatchers(HttpMethod.PATCH, "/api/questions/*/reject").hasRole("TEACHER")
+                .requestMatchers(HttpMethod.POST, "/api/subjects").hasRole("TEACHER")
+                .requestMatchers(HttpMethod.POST, "/api/subjects/*/topics").hasRole("TEACHER")
 
-                                               .anyRequest()
-                                               .authenticated())
+                // ── BOTH ───────────────────────────────────────────────────
+                .requestMatchers(HttpMethod.GET, "/api/subjects").authenticated()
+                .requestMatchers(HttpMethod.GET, "/api/subjects/*/topics").authenticated()
+
+                .anyRequest().authenticated()
+            )
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
@@ -75,7 +76,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:8081")); 
+        config.setAllowedOrigins(List.of("http://localhost:8081"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("Authorization", "Content-Type"));
         config.setAllowCredentials(true);

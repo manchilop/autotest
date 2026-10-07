@@ -37,11 +37,12 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public User registerUser(String email, String rawPassword, UserRole role) {
+    public User registerUser(String email, String rawPassword, UserRole role, String name) {
         User user = User.builder()
                 .email(email)
                 .password(passwordEncoder.encode(rawPassword))
                 .role(role)
+                .name(name)
                 .build();
         return userRepository.save(user);
     }

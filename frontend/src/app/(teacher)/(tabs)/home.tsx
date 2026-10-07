@@ -1,24 +1,32 @@
-import { useEffect, useState } from "react";
+import { useCallback, useContext, useState } from "react";
 import { View, Text, StyleSheet, Pressable } from "react-native";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import { getQuestionsByStatus } from "../../../services/question.service";
+import { getMySubjects } from "../../../services/subject.service";
+import { AuthContext } from "../../../store/AuthContext";
 
 export default function Home() {
+  const { authState } = useContext(AuthContext);
   const [pendingCount, setPendingCount] = useState<number | null>(null);
   const [approvedCount, setApprovedCount] = useState<number | null>(null);
+  const [subjectCount, setSubjectCount] = useState<number | null>(null);
 
-  useEffect(() => {
-    fetchCounts();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      fetchCounts();
+    }, [])
+  );
 
   const fetchCounts = async () => {
     try {
-      const [pending, approved] = await Promise.all([
+      const [pending, approved, subjects] = await Promise.all([
         getQuestionsByStatus("PENDING"),
         getQuestionsByStatus("APPROVED"),
+        getMySubjects(),
       ]);
       setPendingCount(pending.length);
       setApprovedCount(approved.length);
+      setSubjectCount(subjects.length);
     } catch (e) {
       console.error(e);
     }
@@ -27,9 +35,15 @@ export default function Home() {
   return (
     <View style={styles.container}>
       <Text style={styles.greeting}>Good morning,</Text>
-      <Text style={styles.name}>Teacher 👋</Text>
+      <Text style={styles.name}>{authState.user?.name ?? "Teacher"} 👋</Text>
 
       <View style={styles.statRow}>
+        <View style={styles.stat}>
+          <Text style={styles.statLabel}>Subjects</Text>
+          <Text style={[styles.statValue, styles.purple]}>
+            {subjectCount ?? "—"}
+          </Text>
+        </View>
         <View style={styles.stat}>
           <Text style={styles.statLabel}>Pending review</Text>
           <Text style={[styles.statValue, styles.amber]}>
@@ -76,7 +90,7 @@ export default function Home() {
         </View>
         <View style={styles.actionContent}>
           <Text style={styles.actionLabel}>Question library</Text>
-          <Text style={styles.actionSub}>Browse approved and rejected questions</Text>
+          <Text style={styles.actionSub}>Browse subjects, topics and reviewed questions</Text>
         </View>
         <Text style={styles.chevron}>›</Text>
       </Pressable>
@@ -99,10 +113,11 @@ const styles = StyleSheet.create({
   container: { flex: 1, padding: 20, backgroundColor: "#F8FAFC" },
   greeting: { fontSize: 13, color: "#6B7280", marginTop: 20 },
   name: { fontSize: 22, fontWeight: "700", color: "#111827", marginBottom: 20 },
-  statRow: { flexDirection: "row", gap: 10, marginBottom: 16 },
-  stat: { flex: 1, backgroundColor: "#F3F4F6", borderRadius: 10, padding: 14 },
-  statLabel: { fontSize: 12, color: "#6B7280", marginBottom: 4 },
-  statValue: { fontSize: 26, fontWeight: "700" },
+  statRow: { flexDirection: "row", gap: 8, marginBottom: 16 },
+  stat: { flex: 1, backgroundColor: "#F3F4F6", borderRadius: 10, padding: 12 },
+  statLabel: { fontSize: 11, color: "#6B7280", marginBottom: 4 },
+  statValue: { fontSize: 22, fontWeight: "700" },
+  purple: { color: "#534AB7" },
   amber: { color: "#BA7517" },
   green: { color: "#3B6D11" },
   alert: { backgroundColor: "#FAEEDA", borderRadius: 12, padding: 14, marginBottom: 16 },

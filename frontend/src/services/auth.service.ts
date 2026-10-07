@@ -1,5 +1,5 @@
 import api from "./api";
-import { LoginRequest, LoginResponse } from "../types/auth";
+import { LoginRequest, LoginResponse, RegisterRequest } from "../types/auth";
 
 // 🔐 LOGIN
 export const login = async (
@@ -15,7 +15,7 @@ export const login = async (
 
 // 📝 REGISTER
 export const register = async (
-  data: LoginRequest
+  data: RegisterRequest
 ): Promise<string> => {
   const response = await api.post<string>(
     "/auth/register",

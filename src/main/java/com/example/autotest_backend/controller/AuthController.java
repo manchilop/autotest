@@ -1,6 +1,7 @@
 package com.example.autotest_backend.controller;
 
 import com.example.autotest_backend.dto.AuthRequest;
+import com.example.autotest_backend.dto.RegisterRequest;
 import com.example.autotest_backend.dto.AuthResponse;
 import com.example.autotest_backend.dto.UserDTO;
 import com.example.autotest_backend.model.User;
@@ -38,6 +39,7 @@ public class AuthController {
                     .id(u.getId())
                     .email(u.getEmail())
                     .role(u.getRole().name())
+                    .name(u.getName())
                     .build();
 
             return ResponseEntity.ok(new AuthResponse(token, jwtUtil.getExpirationSeconds(), userDto));
@@ -47,11 +49,11 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody @Valid AuthRequest r) {
+    public ResponseEntity<?> register(@RequestBody @Valid RegisterRequest r) {
         if (userService.existsByEmail(r.getEmail())) {
-            return ResponseEntity.badRequest().body("Email exists");
+            return ResponseEntity.badRequest().body("Email already exists");
         }
-        userService.registerUser(r.getEmail(), r.getPassword(), UserRole.STUDENT);
+        userService.registerUser(r.getEmail(), r.getPassword(), UserRole.STUDENT, r.getName());
         return ResponseEntity.ok("created");
     }
 }

@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useCallback, useMemo } from "react";
+import { useFocusEffect } from "expo-router";
 import {
   View,
   Text,
   StyleSheet,
   Pressable,
-  FlatList,
+  ScrollView,
   ActivityIndicator,
 } from "react-native";
 import { getCompletedQuestions } from "../../../services/question.service";
@@ -12,14 +13,54 @@ import { QuestionResponse } from "../../../types/question";
 
 const LETTERS = ["A", "B", "C", "D", "E"];
 
+const NO_SUBJECT = "Sin asignatura";
+const NO_TOPIC = "Sin tema";
+
+interface TopicGroup {
+  topicName: string;
+  questions: QuestionResponse[];
+}
+
+interface SubjectGroup {
+  subjectName: string;
+  topics: TopicGroup[];
+  count: number;
+}
+
+function groupQuestions(questions: QuestionResponse[]): SubjectGroup[] {
+  const subjectMap = new Map<string, Map<string, QuestionResponse[]>>();
+
+  for (const q of questions) {
+    const subject = q.subjectName ?? NO_SUBJECT;
+    const topic = q.topicName ?? NO_TOPIC;
+
+    if (!subjectMap.has(subject)) subjectMap.set(subject, new Map());
+    const topicMap = subjectMap.get(subject)!;
+    if (!topicMap.has(topic)) topicMap.set(topic, []);
+    topicMap.get(topic)!.push(q);
+  }
+
+  return Array.from(subjectMap.entries()).map(([subjectName, topicMap]) => {
+    const topics = Array.from(topicMap.entries()).map(([topicName, qs]) => ({
+      topicName,
+      questions: qs,
+    }));
+    const count = topics.reduce((acc, t) => acc + t.questions.length, 0);
+    return { subjectName, topics, count };
+  });
+}
+
 export default function Library() {
   const [questions, setQuestions] = useState<QuestionResponse[]>([]);
   const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [collapsedSubjects, setCollapsedSubjects] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    fetchCompleted();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      fetchCompleted();
+    }, [])
+  );
 
   const fetchCompleted = async () => {
     try {
@@ -31,12 +72,16 @@ export default function Library() {
     }
   };
 
-  const toggle = (id: number) => setExpandedId(expandedId === id ? null : id);
+  const groups = useMemo(() => groupQuestions(questions), [questions]);
 
-  const renderItem = ({ item }: { item: QuestionResponse }) => {
+  const toggle = (id: number) => setExpandedId(expandedId === id ? null : id);
+  const toggleSubject = (name: string) =>
+    setCollapsedSubjects((prev) => ({ ...prev, [name]: !prev[name] }));
+
+  const renderQuestion = (item: QuestionResponse) => {
     const expanded = expandedId === item.id;
     return (
-      <Pressable style={styles.card} onPress={() => toggle(item.id)}>
+      <Pressable key={item.id} style={styles.card} onPress={() => toggle(item.id)}>
         <View style={styles.cardHeader}>
           <Text style={styles.questionText}>{item.questionText}</Text>
           <Text style={styles.chevron}>{expanded ? "↓" : "›"}</Text>
@@ -83,11 +128,33 @@ export default function Library() {
           <Text style={styles.emptySub}>Answer questions in Practice to fill your library</Text>
         </View>
       ) : (
-        <FlatList
-          data={questions}
-          keyExtractor={(item) => item.id.toString()}
-          renderItem={renderItem}
-        />
+        <ScrollView showsVerticalScrollIndicator={false}>
+          {groups.map((subject) => {
+            const collapsed = collapsedSubjects[subject.subjectName];
+            return (
+              <View key={subject.subjectName} style={styles.subjectSection}>
+                <Pressable
+                  style={styles.subjectHeader}
+                  onPress={() => toggleSubject(subject.subjectName)}
+                >
+                  <Text style={styles.subjectTitle}>{subject.subjectName}</Text>
+                  <View style={styles.subjectCountBadge}>
+                    <Text style={styles.subjectCountText}>{subject.count}</Text>
+                  </View>
+                  <Text style={styles.subjectChevron}>{collapsed ? "›" : "↓"}</Text>
+                </Pressable>
+
+                {!collapsed &&
+                  subject.topics.map((topic) => (
+                    <View key={topic.topicName} style={styles.topicSection}>
+                      <Text style={styles.topicTitle}>{topic.topicName}</Text>
+                      {topic.questions.map(renderQuestion)}
+                    </View>
+                  ))}
+              </View>
+            );
+          })}
+        </ScrollView>
       )}
     </View>
   );
@@ -100,6 +167,14 @@ const styles = StyleSheet.create({
   pageSub: { fontSize: 13, color: "#6B7280", marginTop: 2 },
   countPill: { alignSelf: "flex-start", backgroundColor: "#EEEDFE", borderRadius: 20, paddingHorizontal: 12, paddingVertical: 4, marginBottom: 16 },
   countText: { fontSize: 13, color: "#534AB7", fontWeight: "600" },
+  subjectSection: { marginBottom: 20 },
+  subjectHeader: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 10 },
+  subjectTitle: { fontSize: 16, fontWeight: "700", color: "#111827" },
+  subjectCountBadge: { backgroundColor: "#EEEDFE", borderRadius: 20, paddingHorizontal: 8, paddingVertical: 1 },
+  subjectCountText: { fontSize: 11, fontWeight: "700", color: "#534AB7" },
+  subjectChevron: { marginLeft: "auto", fontSize: 16, color: "#9CA3AF" },
+  topicSection: { marginBottom: 12 },
+  topicTitle: { fontSize: 12, fontWeight: "700", color: "#0F6E56", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6, marginLeft: 2 },
   card: { backgroundColor: "#fff", borderWidth: 1, borderColor: "#E5E7EB", borderRadius: 12, marginBottom: 8, overflow: "hidden" },
   cardHeader: { flexDirection: "row", alignItems: "center", padding: 14, gap: 10 },
   questionText: { flex: 1, fontSize: 14, fontWeight: "600", color: "#111827", lineHeight: 20 },

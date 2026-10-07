@@ -13,5 +13,5 @@ public interface UserService {
 
     boolean existsByEmail(String email);
 
-    User registerUser(String email, String rawPassword, UserRole role);
+    User registerUser(String email, String rawPassword, UserRole role, String name);
 }

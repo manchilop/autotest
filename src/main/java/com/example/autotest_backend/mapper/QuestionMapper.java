@@ -30,6 +30,10 @@ public interface QuestionMapper {
        READ (ENTITY -> DTO)
        ========================= */
 
+    @Mapping(target = "topicId", source = "topic.id")
+    @Mapping(target = "topicName", source = "topic.name")
+    @Mapping(target = "subjectId", source = "topic.subject.id")
+    @Mapping(target = "subjectName", source = "topic.subject.name")
     QuestionResponse toResponse(Question question);
 
     @Mapping(target = "correct", source = "correct")

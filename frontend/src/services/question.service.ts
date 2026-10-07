@@ -17,8 +17,9 @@ export const getQuestionsByStatus = async (status: string) => {
   return response.data;
 };
 
-export const getNextQuestion = async () => {
-  const response = await api.get("/api/questions/next");
+export const getNextQuestion = async (subjectId?: number) => {
+  const query = subjectId ? `?subjectId=${subjectId}` : "";
+  const response = await api.get(`/api/questions/next${query}`);
   return response.data;
 };
 

@@ -11,6 +11,25 @@ const api = axios.create({
   },
 });
 
+/*
+ * Clearing the stored keys is not enough when the server rejects a token: the
+ * session also lives in AuthContext's React state, and a component that only
+ * reads that state would still believe the user is signed in. Because an axios
+ * interceptor cannot use a React context, AuthProvider registers its own logout
+ * here and the interceptor delegates to it, so state and storage are cleared
+ * together.
+ */
+type UnauthorizedHandler = () => Promise<void> | void;
+
+let onUnauthorized: UnauthorizedHandler | null = null;
+
+export const setUnauthorizedHandler = (handler: UnauthorizedHandler | null) => {
+  onUnauthorized = handler;
+};
+
+/** Keys holding the session. Kept here so both modules clear exactly the same set. */
+export const SESSION_KEYS = ["token", "user", "expiresAt"];
+
 // 🔐 REQUEST INTERCEPTOR → attach JWT
 api.interceptors.request.use(
   async (config) => {
@@ -34,10 +53,12 @@ api.interceptors.response.use(
     const status = error.response?.status;
 
     if (status === 401) {
-      // clear session
-      await AsyncStorage.removeItem("token");
-      await AsyncStorage.removeItem("user");
-      await AsyncStorage.removeItem("expiresIn");
+      // Clear the in-memory session too, not just the stored one
+      if (onUnauthorized) {
+        await onUnauthorized();
+      } else {
+        await AsyncStorage.multiRemove(SESSION_KEYS);
+      }
 
       // redirect to login
       router.replace("/(auth)/login");

@@ -8,17 +8,24 @@ import java.util.List;
 
 public interface QuestionService {
 
-    Question createQuestion(Question question);
+    /*
+     * Every operation below takes the requesting user because role alone is not
+     * enough: the caller must also be related to the subject the question
+     * belongs to. See the resource-level checks in QuestionServiceImpl.
+     */
 
-    List<Question> getAllQuestions();
+    Question createQuestion(Question question, User requester);
 
-    List<Question> getQuestionsByStatus(QuestionStatus status);
+    List<Question> getAllQuestions(User requester);
 
-    Question approveQuestion(Long questionId);
+    List<Question> getQuestionsByStatus(QuestionStatus status, User requester);
 
-    Question rejectQuestion(Long questionId);
+    Question approveQuestion(Long questionId, User requester);
 
-    Question getNextQuestion(Long userId);
+    Question rejectQuestion(Long questionId, User requester);
+
+    // subjectId is optional — null means "any subject the user belongs to"
+    Question getNextQuestion(Long userId, Long subjectId);
 
     boolean answerQuestion(Long questionId, Long choiceId, User user);
 }

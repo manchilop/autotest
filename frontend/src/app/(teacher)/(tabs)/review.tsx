@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useFocusEffect } from "expo-router";
 import {
   View,
   Text,
@@ -17,9 +18,11 @@ export default function Review() {
   const [questions, setQuestions] = useState<QuestionResponse[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadQuestions();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      loadQuestions();
+    }, [])
+  );
 
   const loadQuestions = async () => {
     try {
@@ -82,6 +85,20 @@ export default function Review() {
       </View>
 
       <View style={styles.card}>
+        {(currentQuestion.subjectName || currentQuestion.topicName) && (
+          <View style={styles.tagsRow}>
+            {currentQuestion.subjectName && (
+              <View style={styles.subjectTag}>
+                <Text style={styles.subjectTagText}>{currentQuestion.subjectName}</Text>
+              </View>
+            )}
+            {currentQuestion.topicName && (
+              <View style={styles.topicTag}>
+                <Text style={styles.topicTagText}>{currentQuestion.topicName}</Text>
+              </View>
+            )}
+          </View>
+        )}
         <Text style={styles.question}>{currentQuestion.questionText}</Text>
         <View style={styles.choices}>
           {currentQuestion.choices.map((choice) => (
@@ -121,6 +138,11 @@ const styles = StyleSheet.create({
   counter: { alignSelf: "flex-start", backgroundColor: "#FAEEDA", borderRadius: 20, paddingHorizontal: 12, paddingVertical: 4, marginBottom: 20 },
   counterText: { fontSize: 13, color: "#633806", fontWeight: "600" },
   card: { backgroundColor: "#fff", borderWidth: 1, borderColor: "#E5E7EB", borderRadius: 12, padding: 20 },
+  tagsRow: { flexDirection: "row", gap: 6, marginBottom: 12 },
+  subjectTag: { backgroundColor: "#EEEDFE", borderRadius: 10, paddingHorizontal: 8, paddingVertical: 3 },
+  subjectTagText: { fontSize: 11, fontWeight: "700", color: "#534AB7" },
+  topicTag: { backgroundColor: "#E1F5EE", borderRadius: 10, paddingHorizontal: 8, paddingVertical: 3 },
+  topicTagText: { fontSize: 11, fontWeight: "700", color: "#0F6E56" },
   question: { fontSize: 18, fontWeight: "600", color: "#111827", marginBottom: 20, lineHeight: 26 },
   choices: { gap: 8 },
   choice: { backgroundColor: "#F3F4F6", borderRadius: 8, padding: 12, flexDirection: "row", alignItems: "center", gap: 10 },
